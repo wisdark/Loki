@@ -2,11 +2,12 @@
 # Author: Pure-L0G1C
 # Description: Session
 
-import pickle
+import json
 import socket
 from time import sleep
 from lib.info import Information
 from socket import timeout as TimeOutError
+
 
 class Session(object):
 
@@ -18,7 +19,8 @@ class Session(object):
         try:
             self.session.shutdown(socket.SHUT_RDWR)
             self.session.close()
-        except:pass
+        except:
+            pass
 
     def initial_communication(self):
         sleep(0.5)
@@ -35,17 +37,19 @@ class Session(object):
             pass
 
     def struct(self, code=None, args=None):
-        return pickle.dumps({ 'code': code, 'args': args })
+        return json.dumps({'code': code, 'args': args}).encode()
 
     def send(self, code=None, args=None):
         data = self.struct(code, args)
         try:
             self.session.sendall(data)
-        except:pass
+        except:
+            pass
 
     def recv(self, size=4096):
         try:
-            return pickle.loads(self.session.recv(size))
+            return json.loads(self.session.recv(size))
         except TimeOutError:
             return -1
-        except:pass
+        except:
+            pass

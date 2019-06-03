@@ -3,8 +3,9 @@
 # Description: Session
 
 import time
-import pickle
+import json
 import socket
+
 
 class Session(object):
 
@@ -12,29 +13,34 @@ class Session(object):
         self.ip = ip[0]
         try:
             self.session = session
-        except:pass
+        except:
+            pass
 
     def initial_communication(self):
         try:
             return self.recv()
-        except:pass
+        except:
+            pass
 
     def close(self):
         try:
             self.session.shutdown(socket.SHUT_RDWR)
             self.session.close()
-        except:pass
+        except:
+            pass
 
     def struct(self, code=None, args=None):
-        return pickle.dumps({ 'code': code, 'args': args })
+        return json.dumps({'code': code, 'args': args}).encode()
 
     def send(self, code=None, args=None):
         data = self.struct(code, args)
         try:
             self.session.sendall(data)
-        except:pass
+        except:
+            pass
 
     def recv(self, size=4096):
         try:
-            return pickle.loads(self.session.recv(size))
-        except:pass
+            return json.loads(self.session.recv(size))
+        except:
+            pass

@@ -9,6 +9,7 @@ from hashlib import sha256
 from getpass import getuser
 from platform import system, node, release, version
 
+
 class System(object):
 
     def __init__(self):
@@ -24,42 +25,46 @@ class System(object):
 
     def sys_info(self):
         return {
-         'uuid': self.uuid,
-         'system': self.system,
-         'release': self.release,
-         'version': self.version,
-         'hostname': self.hostname,
-         'username': self.username
+            'uuid': self.uuid,
+            'system': self.system,
+            'release': self.release,
+            'version': self.version,
+            'hostname': self.hostname,
+            'username': self.username
         }
+
 
 class Geo(object):
 
     def __init__(self):
         self.geo = self.get_geo()
-        self.interal_ip = self.get_interal_ip()
+        self.internal_ip = self.get_internal_ip()
 
-    def get_interal_ip(self):
+    def get_internal_ip(self):
         ip = ''
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.connect(('8.8.8.8', 80))
             ip = s.getsockname()[0]
             s.close()
-        except:pass
+        except:
+            pass
         return ip
 
     def get_geo(self):
         try:
-            return get('http://ip-api.com/json').json()
-        except:pass
+            return get('https://ipapi.co/json/').json()
+        except:
+            pass
 
     def net_info(self):
         data = self.get_geo()
         if data:
-            i_ip = self.get_interal_ip()
+            i_ip = self.internal_ip
             if i_ip:
                 data['internalIp'] = i_ip
         return data
+
 
 class Information(object):
 
@@ -69,16 +74,16 @@ class Information(object):
 
     def parse(self, data):
         data = {
-         'lat': data['lat'] if 'lat' in data else '',
-         'lon': data['lon'] if 'lon' in data else '',
-         'zip': data['zip'] if 'zip' in data else '',
-         'isp': data['isp'] if 'isp' in data else '',
-         'city': data['city'] if 'city' in data else '',
-         'query': data['query'] if 'query' in data else '',
-         'country': data['country'] if 'country' in data else '',
-         'timezone': data['timezone'] if 'timezone' in data else '',
-         'regionName': data['regionName'] if 'regionName' in data else '',
-         'internalIp': data['internalIp'] if 'internalIp' in data else ''
+            'lat': data['latitude'] if 'latitude' in data else '',
+            'lon': data['longitude'] if 'longitude' in data else '',
+            'zip': data['postal'] if 'postal' in data else '',
+            'isp': data['org'] if 'org' in data else '',
+            'city': data['city'] if 'city' in data else '',
+            'query': data['ip'] if 'ip' in data else '',
+            'country': data['country_name'] if 'country_name' in data else '',
+            'timezone': data['timezone'] if 'timezone' in data else '',
+            'regionName': data['region'] if 'region' in data else '',
+            'internalIp': data['internalIp'] if 'internalIp' in data else ''
         }
 
         if '/' in data['timezone']:
@@ -92,6 +97,6 @@ class Information(object):
     def get_info(self):
         data = self.net_info
         return {
-         'sys_info': self.sys_info,
-         'net_info': self.parse(data if data else [])
+            'sys_info': self.sys_info,
+            'net_info': self.parse(data if data else [])
         }
