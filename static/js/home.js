@@ -21,7 +21,7 @@ $(document).ready(function() {
 
 function onlineBotsSource() {
     $.ajax({
-        type: 'POST',
+        type: 'GET',
         url: '/online_bots_source'
     }).done(function(data) {
         let display = document.getElementById('display');
@@ -39,7 +39,7 @@ function fetchBots() {
         return;
     }
     $.ajax({
-        type: 'POST',
+        type: 'GET',
         url: '/fetch_bots'
     }).done(function(data) {
         let displayArea = document.getElementById('display-area');
@@ -75,7 +75,7 @@ function fetchBots() {
 
 function taskConsoleSource() {
     $.ajax({
-        type: 'POST',
+        type: 'GET',
         url: '/task_console_source'
     }).done(function(data) {
         let display = document.getElementById('display');
@@ -84,6 +84,7 @@ function taskConsoleSource() {
             rested = false;
             fetchBotsPaused = true;
             let html = data['resp'];
+
             let display = document.getElementById('display');
             display.innerHTML = html;
 

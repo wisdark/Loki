@@ -10,10 +10,10 @@ from os import path, makedirs
 #######################################################################################################
 ### This is only required if you are connecting to computers outside of your network ###
 #
-# If you are using connecting to computer outside
+# If you are connecting to computers outside
 # of your network, you must enable port forwarding
 # on your router. You must have have the FTP_PORT, SSH_PORT
-# and the port you started the server on open. Both the FTP_PORT and SSH_PORT
+# and the port you started the server on open on your router. Both the FTP_PORT and SSH_PORT
 # can be confirgured below.
 #
 # You must also set the PRIVATE_IP as the ip of your computer
@@ -30,14 +30,18 @@ FTP_PORT = 128
 SSH_PORT = 256
 
 # database
-DATABASE = 'lib/database.db'
+DATABASE = 'database/database.db'
+
+if not path.exists('database'):
+    makedirs('database')
 
 # account
-LOCK_TIME = 300 # in seconds
-MAX_FAILED_ATTEMPTS = 3 # attempts before locking
+LOCK_TIME = 300  # in seconds
+MAX_FAILED_ATTEMPTS = 3  # attempts before locking
 
-if not path.exists('lib/cert'):
-    makedirs('lib/cert')
+# cert
+if not path.exists('cert'):
+    makedirs('cert')
 
-CERT_FILE = 'lib/cert/public.crt'
-KEY_FILE = 'lib/cert/private.key'
+CERT_FILE = 'cert/public.crt'
+KEY_FILE = 'cert/private.key'
