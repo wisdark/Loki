@@ -5,11 +5,25 @@ Loki uses **RSA-2048** with **AES-256** to keep your communication with infected
 
 [![Version](https://img.shields.io/badge/Version-v0.1.1-blue)]()
 [![Python](https://img.shields.io/badge/Python-v3.6%2B-blue)]()
-[![Discord](https://img.shields.io/badge/Discord-server-blue)](https://discord.gg/Qnvw43r)
+[![Discord](https://img.shields.io/badge/Discord-server-blue)](https://discord.gg/VYRAZg5)
 [![Donate](https://img.shields.io/badge/PayPal-Donate-orange.svg)](https://www.paypal.me/Msheikh03)
 <br/><br/>
 
 <img src="Screenshots/bots.png" atl=""/>
+
+### Disclaimer
+
+```
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+Loki, just like all my other repos is stricly for **educational** purposes.
 
 ### Requirements
 

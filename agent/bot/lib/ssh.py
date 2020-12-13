@@ -81,8 +81,8 @@ class Client(object):
             output = proc[0].decode('utf8')
             errors = proc[1].decode('utf8')
             output = output if output else errors
-        except:
-            output = ''
+        except Exception as e:
+            output = f'Error: {e}'
 
         if cmd.split()[0] == 'cd':
             if len(cmd.split()) != 1:
@@ -90,8 +90,8 @@ class Client(object):
                 if os.path.exists(path):
                     os.chdir(path)
             else:
-                output = ''
                 os.chdir(self.home)
+            output = os.getcwd()
 
         return output if len(output) else '-1'
 
@@ -130,14 +130,23 @@ class SSH(object):
         if self.communication:
             return self.communication.send(cmd)
 
-    def client(self):
+    def socket_obj(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.recipient_session = ssl.wrap_socket(
-            sock, ssl_version=ssl.PROTOCOL_SSLv23)
-        self.recipient_session.settimeout(self.max_time)
-        try:
-            self.recipient_session.connect((self.ip, self.port))
-        except ConnectionRefusedError:
+        sock.settimeout(self.max_time)
+
+        for i in range(30):
+            try:
+                self.recipient_session = ssl.wrap_socket(
+                    sock, ssl_version=ssl.PROTOCOL_SSLv23)
+                self.recipient_session.connect((self.ip, self.port))
+                return 0
+            except:
+                sleep(0.5)
+
+        return -1
+
+    def client(self):
+        if self.socket_obj() == -1:
             self.display('Failed to connect to {}:{}'.format(
                 self.ip, self.port))
             return -1
